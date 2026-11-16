@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Politie Patrouille - Pacman Woordenschat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #003082;
+            --gold: #d4af37;
+            --siren-blue: #00e5ff;
+            --siren-red: #ff1744;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #152238 0%, #080d1a 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+        }
+
+        .pacman-dashboard {
+            width: 100%;
+            max-width: 950px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 18px;
+            background: rgba(10, 19, 41, 0.95);
+            border-bottom: 2px solid var(--siren-blue);
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pacman-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0 15px 25px 15px;
+            flex-wrap: wrap;
+        }
+
+        .pacman-canvas-wrap {
+            border: 3px solid #1a3a6b;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(0, 102, 255, 0.4);
+            background: #0b0f19;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .pacman-sidebar {
+            width: 290px;
+            background: rgba(10, 19, 41, 0.9);
+            border: 2px solid #0066ff;
+            border-radius: 10px;
+            padding: 14px;
+            color: #fff;
+            font-size: 0.85em;
+        }
+
+        .player-name-box {
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .player-name-box input {
+            width: 100%;
+            padding: 6px 10px;
+            margin-top: 5px;
+            background: #0a1120;
+            border: 1px solid #00e5ff;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            outline: none;
+        }
+
+        .pacman-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 10, 25, 0.92);
+            backdrop-filter: blur(6px);
+            z-index: 2500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .pacman-modal-card {
+            background: #111a2e;
+            border: 3px solid #0066ff;
+            border-radius: 12px;
+            max-width: 720px;
+            width: 100%;
+            padding: 20px;
+            color: #fff;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+        }
+
+        .pacman-word-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0 15px 0;
+            padding: 10px;
+            background: rgba(0, 102, 255, 0.1);
+            border: 1px dashed var(--siren-blue);
+            border-radius: 8px;
+            justify-content: center;
+        }
+
+        .p-chip {
+            background: #182848;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-weight: bold;
+            border: 1px solid #3b5998;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .p-chip.used {
+            opacity: 0.25;
+            text-decoration: line-through;
+            background: #000;
+            border-color: #333;
+        }
+
+        .pacman-q-card {
+            background: #182642;
+            border: 1px solid #283e6b;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+        }
+
+        .pacman-q-card.correct {
+            border-color: #00e676;
+            background: rgba(0, 230, 118, 0.12);
+        }
+
+        .pacman-input {
+            width: 100%;
+            padding: 7px 10px;
+            background: #0a1120;
+            border: 2px solid #37474f;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 0.9em;
+            font-weight: bold;
+            outline: none;
+        }
+
+        .pacman-input:focus { border-color: var(--siren-blue); }
+        .pacman-input:read-only { background: #0d2818; border-color: #00e676; color: #b9f6ca; }
+
+        #pBtnStart:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pacman-dashboard">
+        <div><i class="fa-solid fa-car-side" style="color:#00e5ff;"></i> <strong>Politie Patrouille 25x30</strong></div>
+        <div>Score: <span id="pScore" style="color:var(--gold); font-weight:bold;">0</span></div>
+        <div>Level: <span id="pLevel" style="color:#00e5ff; font-weight:bold;">1</span></div>
+        <div>Levens: <span id="pLives" style="color:#ff1744; font-weight:bold;">3</span></div>
+    </div>
+
+    <div class="pacman-layout">
+        <div class="pacman-canvas-wrap">
+            <canvas id="pacmanCanvas" width="550" height="660"></canvas>
+        </div>
+
+        <div class="pacman-sidebar">
+            <div class="player-name-box">
+                <label for="playerNameInput" style="color:#00e5ff; font-weight:bold;">Naam speler:</label>
+                <input type="text" id="playerNameInput" value="Agent" placeholder="Vul je naam in...">
+            </div>
+
+            <h3 style="margin-top:0; color:var(--gold);"><i class="fa-solid fa-ranking-star"></i> Topscores</h3>
+            <ul id="pLeaderboard" style="list-style:none; padding:0; margin:0 0 15px 0; max-height:240px; overflow-y:auto;"></ul>
+            
+            <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:6px; font-size:0.85em; line-height:1.5;">
+                <strong>Besturing:</strong> Pijltjestoetsen of W-A-S-D.<br>
+                <strong>Let op:</strong> Bij elke crash moet je 5 nieuwe woorden correct intypen om verder te rijden!
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MET 5 DOELWOORDEN EN 10 AFLEIDERS (TOTAAL 15 CHIPS) -->
+    <div class="pacman-modal" id="pModal" style="display:none;">
+        <div class="pacman-modal-card">
+            <h3 style="margin:0; color:#00e5ff; text-transform:uppercase;"><i class="fa-solid fa-keyboard"></i> Kennisverificatie</h3>
+            <p style="font-size:0.85em; color:#cfd8dc; margin:6px 0 12px 0;">Kies uit de <strong>15 onderstaande woorden</strong> (5 juist en 10 afleiders) en typ de juiste termen in:</p>
+            
+            <div style="font-size:0.75em; font-weight:bold; color:var(--gold); text-transform:uppercase;">Beschikbare termen (5 juiste woorden + 10 afleiders):</div>
+            <div class="pacman-word-chips" id="pChips"></div>
+
+            <div id="pQuestions"></div>
+
+            <button id="pBtnStart" disabled onclick="pFinishChallenge()" style="width:100%; padding:12px; background:var(--primary); color:white; border:2px solid #00e5ff; border-radius:6px; font-weight:bold; cursor:pointer; text-transform:uppercase; margin-top:10px;">
+                Typ alle 5 woorden correct in (0/5)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* ================= 48 WOORDEN MET DEFINITIES ================= */
+        const PACMAN_VOCABULARY = [
+            { word: "determineren", def: "bepalen, vaststellen op grond van bepaalde kenmerken" },
+            { word: "souterrain", def: "ruimte van een woning die gedeeltelijk beneden straatniveau ligt" },
+            { word: "consistentie", def: "samenhang; duurzaamheid" },
+            { word: "gallicisme", def: "een (te) letterlijke vertaling uit het Frans" },
+            { word: "absolverend", def: "vrijstelling gevend voor een deel van een examen" },
+            { word: "mom", def: "dekmantel, façade" },
+            { word: "olijk", def: "leuk; guitig" },
+            { word: "hardvochtig", def: "wreed en zonder medelijden" },
+            { word: "eega", def: "echtgenote" },
+            { word: "conventie", def: "internationale overeenkomst" },
+            { word: "restrictie", def: "beperking; voorwaarde" },
+            { word: "kim", def: "rand van de horizon" },
+            { word: "partizaan", def: "guerrillastrijder" },
+            { word: "liberaal", def: "ruimdenkend; onbekrompen" },
+            { word: "diversificatie", def: "risico door voor verscheidenheid te kiezen" },
+            { word: "fecaliën", def: "uitwerpselen" },
+            { word: "contingent", def: "groep militairen of agenten" },
+            { word: "summier", def: "kort en bondig" },
+            { word: "ethiek", def: "de leer van goed en kwaad" },
+            { word: "respijt", def: "uitstel" },
+            { word: "usance", def: "gewoonte; gebruik" },
+            { word: "torso", def: "beeld dat bestaat uit een romp zonder hoofd, benen en armen" },
+            { word: "initiëren", def: "opzetten, opstarten" },
+            { word: "intrigeren", def: "de nieuwsgierigheid stimuleren" },
+            { word: "sage", def: "overgeleverd (volks-)verhaal gebaseerd op een historische gebeurtenis" },
+            { word: "loeven", def: "dichter bij de wind komen (van zeilen)" },
+            { word: "prolongeren", def: "de duur verlengen" },
+            { word: "paria", def: "verschoppeling; uitgestotene" },
+            { word: "prominent", def: "vooraanstaand; belangrijk" },
+            { word: "collaborateur", def: "iemand die in een bezet land met de bezetters samenwerkt" },
+            { word: "delinquent", def: "misdadiger, crimineel" },
+            { word: "ampel", def: "uitvoerig, omstandig" },
+            { word: "paradigma", def: "voorbeeld; rij van mogelijkheden" },
+            { word: "stabiliteit", def: "duurzaamheid; bestendigheid" },
+            { word: "fresco", def: "muurschildering met waterverf op verse kalk" },
+            { word: "pedagogische", def: "opvoedkundige" },
+            { word: "filantroop", def: "weldoener, mensenvriend" },
+            { word: "extravert", def: "naar buiten gekeerd" },
+            { word: "viool", def: "muziekinstrument met snaren en strijkstok" },
+            { word: "respectabel", def: "achtenswaardig, eerbiedwaardig" },
+            { word: "antithese", def: "tegenstelling" },
+            { word: "no-nonsense", def: "hard en zakelijk" },
+            { word: "entourage", def: "omgeving" },
+            { word: "sarcasme", def: "bittere bijtende spot" },
+            { word: "decadentie", def: "geleidelijk verval, overdreven zucht naar genot" },
+            { word: "dependances", def: "bij een hoofdgebouw behorende bijgebouwen" },
+            { word: "banaal", def: "ordinair; grof" },
+            { word: "satirische", def: "op geestige wijze kritiek leverend" }
+        ];
+
+        /* ================= PACMAN SPEL LOGICA ================= */
+        const P_COLS = 25, P_ROWS = 30, P_TILE = 22;
+        let pMap = [], pTotalDots = 0, pScore = 0, pLevel = 1, pLives = 3;
+        let pGameRunning = false, pTurboTimer = 0, pFlash = false;
+        let flashInterval = null;
+        let pTargetPool = [...PACMAN_VOCABULARY], pCurrentTargets = [], pCurrentChips = [];
+        let pCompleted = new Set();
+
+        const pCar = { x: 12, y: 18, px: 12*P_TILE, py: 18*P_TILE, dx: 0, dy: 0, ndx: 0, ndy: 0, spd: 2.2, angle: 0 };
+
+        const pThieves = [
+            { id: 1, color: "#e53935", x: 12, y: 11, px: 12*P_TILE, py: 11*P_TILE, dx: 0, dy: -1, spd: 1.8, scared: false, inJail: true, exitDelay: 0 },
+            { id: 2, color: "#ff9800", x: 11, y: 11, px: 11*P_TILE, py: 11*P_TILE, dx: 0, dy: -1, spd: 1.7, scared: false, inJail: true, exitDelay: 35 },
+            { id: 3, color: "#00e5ff", x: 13, y: 11, px: 13*P_TILE, py: 11*P_TILE, dx: 0, dy: -1, spd: 1.6, scared: false, inJail: true, exitDelay: 70 },
+            { id: 4, color: "#e91e63", x: 12, y: 11, px: 12*P_TILE, py: 11*P_TILE, dx: 0, dy: -1, spd: 1.5, scared: false, inJail: true, exitDelay: 105 }
+        ];
+
+        const pTemplate = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,3,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,3,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,1,1,2,1],
+            [1,2,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1],
+            [1,1,1,1,1,2,1,1,1,1,0,2,1,2,0,1,1,1,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,0,0,0,0,2,0,2,0,0,0,0,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,0,1,1,1,4,4,4,1,1,1,0,1,2,1,1,1,1,1],
+            [0,0,0,0,0,2,0,0,1,0,0,0,0,0,0,0,1,0,0,2,0,0,0,0,0],
+            [1,1,1,1,1,2,1,0,1,0,0,0,0,0,0,0,1,0,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,0,1,1,1,1,1,1,1,1,1,0,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,0,0,0,0,0,0,0,0,0,0,0,1,2,1,1,1,1,1],
+            [0,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,0],
+            [1,1,1,1,1,2,1,0,1,1,1,1,1,1,1,1,1,0,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,0,0,0,0,0,1,0,0,0,0,0,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,2,1,1,1,2,1,2,1,1,1,2,1,2,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
+            [1,3,2,2,1,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1,2,2,3,1],
+            [1,1,1,2,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,2,1,1,1],
+            [1,2,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1],
+            [1,2,1,1,1,1,1,1,1,1,0,2,1,2,0,1,1,1,1,1,1,1,1,2,1],
+            [1,2,1,1,1,1,1,1,1,1,0,2,1,2,0,1,1,1,1,1,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        function initPacmanGame() {
+            pMap = []; pTotalDots = 0;
+            for (let r = 0; r < P_ROWS; r++) {
+                pMap[r] = [];
+                for (let c = 0; c < P_COLS; c++) {
+                    const tile = pTemplate[r][c];
+                    pMap[r][c] = tile;
+                    if (tile === 2 || tile === 3) pTotalDots++;
+                }
+            }
+            if (!flashInterval) {
+                flashInterval = setInterval(() => pFlash = !pFlash, 140);
+            }
+            pResetPositions();
+            pDraw();
+            updatePLeaderboard();
+            openPModal();
+        }
+
+        function pResetPositions() {
+            pCar.x = 12; pCar.y = 18; pCar.px = 12*P_TILE; pCar.py = 18*P_TILE;
+            pCar.dx = 0; pCar.dy = 0; pCar.ndx = 0; pCar.ndy = 0; pCar.angle = 0;
+            const bSpd = 1.6 + (pLevel * 0.15);
+
+            pThieves.forEach((t, i) => {
+                t.x = 11 + (i % 3);
+                t.y = 11;
+                t.px = t.x * P_TILE;
+                t.py = t.y * P_TILE;
+                t.dx = 0;
+                t.dy = -1;
+                t.spd = bSpd + (i * 0.05);
+                t.scared = false;
+                t.inJail = true;
+                t.exitDelay = i * 35;
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!pGameRunning) return;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { pCar.ndx = 0; pCar.ndy = -1; }
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { pCar.ndx = 0; pCar.ndy = 1; }
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { pCar.ndx = -1; pCar.ndy = 0; }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { pCar.ndx = 1; pCar.ndy = 0; }
+        });
+
+        function pCanMove(c, r, isG = false, inJail = false) {
+            if ((c < 0 || c >= P_COLS) && r === 14) return true;
+            if (c < 0 || c >= P_COLS || r < 0 || r >= P_ROWS) return false;
+            const t = pMap[r][c];
+            if (t === 1) return false;
+            if (t === 4) return (isG && inJail);
+            return true;
+        }
+
+        function pDraw() {
+            const cv = document.getElementById('pacmanCanvas');
+            if(!cv) return;
+            const ctx = cv.getContext('2d');
+            ctx.clearRect(0,0,cv.width,cv.height);
+
+            for(let r=0; r<P_ROWS; r++){
+                for(let c=0; c<P_COLS; c++){
+                    const tile = pMap[r][c], x = c*P_TILE, y = r*P_TILE;
+                    if(tile === 1){
+                        ctx.fillStyle = '#0f2042'; ctx.fillRect(x,y,P_TILE,P_TILE);
+                        ctx.strokeStyle = '#1e88e5'; ctx.lineWidth = 1.5; ctx.strokeRect(x+1,y+1,P_TILE-2,P_TILE-2);
+                    } else if(tile === 4){
+                        ctx.fillStyle = '#212121'; ctx.fillRect(x,y,P_TILE,P_TILE);
+                        ctx.strokeStyle = '#ff9800'; ctx.lineWidth = 2; ctx.beginPath();
+                        ctx.moveTo(x+4,y); ctx.lineTo(x+4,y+P_TILE); ctx.moveTo(x+11,y); ctx.lineTo(x+11,y+P_TILE); ctx.moveTo(x+18,y); ctx.lineTo(x+18,y+P_TILE); ctx.stroke();
+                    } else if(tile === 2){
+                        ctx.fillStyle = '#ffecb3'; ctx.beginPath(); ctx.arc(x+P_TILE/2,y+P_TILE/2,3,0,Math.PI*2); ctx.fill();
+                    } else if(tile === 3){
+                        ctx.fillStyle = pFlash ? '#00e5ff' : '#ff1744'; ctx.beginPath(); ctx.arc(x+P_TILE/2,y+P_TILE/2,6.5,0,Math.PI*2); ctx.fill();
+                    }
+                }
+            }
+
+            // Patrouillewagen (Pacman)
+            ctx.save();
+            ctx.translate(pCar.px + P_TILE/2, pCar.py + P_TILE/2);
+            ctx.rotate(pCar.angle);
+            ctx.fillStyle = 'rgba(255, 238, 88, 0.25)';
+            ctx.beginPath(); ctx.moveTo(8,-6); ctx.lineTo(24,-14); ctx.lineTo(24,14); ctx.lineTo(8,6); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(-10,-7,18,14);
+            ctx.fillStyle = '#003082'; ctx.fillRect(-6,-7,10,3); ctx.fillRect(-6,4,10,3);
+            ctx.fillStyle = '#1e293b'; ctx.fillRect(1,-5,4,10); ctx.fillRect(-8,-5,3,10);
+            ctx.fillStyle = pFlash ? '#ff1744' : '#00e5ff'; ctx.beginPath(); ctx.arc(-2,-3,2.5,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = pFlash ? '#00e5ff' : '#ff1744'; ctx.beginPath(); ctx.arc(-2,3,2.5,0,Math.PI*2); ctx.fill();
+            ctx.restore();
+
+            // Spookjes / Dieven
+            pThieves.forEach(t => {
+                ctx.save();
+                ctx.translate(t.px + P_TILE/2, t.py + P_TILE/2);
+                ctx.fillStyle = t.scared ? (pTurboTimer < 90 && pFlash ? '#fff' : '#1e88e5') : t.color;
+                ctx.beginPath(); ctx.arc(0,-2,8,Math.PI,0,false); ctx.lineTo(8,7); ctx.lineTo(4,5); ctx.lineTo(0,7); ctx.lineTo(-4,5); ctx.lineTo(-8,7); ctx.closePath(); ctx.fill();
+                if(!t.scared){
+                    ctx.fillStyle = '#111'; ctx.fillRect(-7,-4,14,4.5);
+                    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-3.5+t.dx,-2,2,0,Math.PI*2); ctx.arc(3.5+t.dx,-2,2,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.fillRect(-5,2,10,1.5);
+                } else {
+                    ctx.fillStyle = '#fff'; ctx.fillRect(-4,-3,2,2); ctx.fillRect(2,-3,2,2);
+                }
+                ctx.restore();
+            });
+        }
+
+        function pUpdate() {
+            if (!pGameRunning) return;
+
+            if (pCar.y === 14) {
+                if (pCar.px < -P_TILE / 2) {
+                    pCar.px = (P_COLS - 1) * P_TILE;
+                    pCar.x = P_COLS - 1;
+                } else if (pCar.px > (P_COLS - 0.5) * P_TILE) {
+                    pCar.px = 0;
+                    pCar.x = 0;
+                }
+            }
+
+            const gx = Math.round(pCar.px / P_TILE), gy = Math.round(pCar.py / P_TILE);
+            if (Math.abs(pCar.px - gx*P_TILE) < 2 && Math.abs(pCar.py - gy*P_TILE) < 2) {
+                pCar.px = gx*P_TILE; pCar.py = gy*P_TILE; pCar.x = gx; pCar.y = gy;
+
+                if (pMap[pCar.y] && pMap[pCar.y][pCar.x] === 2) {
+                    pMap[pCar.y][pCar.x] = 0; pScore += 10; pTotalDots--;
+                    document.getElementById('pScore').innerText = pScore;
+                } else if (pMap[pCar.y] && pMap[pCar.y][pCar.x] === 3) {
+                    pMap[pCar.y][pCar.x] = 0; pScore += 50; pTotalDots--; pTurboTimer = 280;
+                    pThieves.forEach(t => t.scared = true);
+                    document.getElementById('pScore').innerText = pScore;
+                }
+
+                if (pTotalDots <= 0) {
+                    pLevel++;
+                    document.getElementById('pLevel').innerText = pLevel;
+                    alert(`Level voltooid! Welkom in Level ${pLevel}. De dieven zijn sneller!`);
+                    pGameRunning = false;
+                    initPacmanGame();
+                    return;
+                }
+
+                if (pCar.ndx !== 0 || pCar.ndy !== 0) {
+                    if (pCanMove(pCar.x + pCar.ndx, pCar.y + pCar.ndy)) {
+                        pCar.dx = pCar.ndx; pCar.dy = pCar.ndy;
+                    }
+                }
+                if (!pCanMove(pCar.x + pCar.dx, pCar.y + pCar.dy)) { pCar.dx = 0; pCar.dy = 0; }
+                if (pCar.dx === 1) pCar.angle = 0;
+                if (pCar.dx === -1) pCar.angle = Math.PI;
+                if (pCar.dy === 1) pCar.angle = Math.PI/2;
+                if (pCar.dy === -1) pCar.angle = -Math.PI/2;
+            }
+
+            pCar.px += pCar.dx * pCar.spd;
+            pCar.py += pCar.dy * pCar.spd;
+
+            if (pTurboTimer > 0) {
+                pTurboTimer--;
+                if (pTurboTimer === 0) pThieves.forEach(t => t.scared = false);
+            }
+
+            pThieves.forEach(t => {
+                if (t.inJail) {
+                    if (t.exitDelay > 0) {
+                        t.exitDelay--;
+                    } else {
+                        const targetX = 12 * P_TILE;
+                        const targetY = 8 * P_TILE;
+                        const exitSpd = 1.6;
+
+                        if (Math.abs(t.px - targetX) > 1.2) {
+                            t.px += (t.px < targetX ? 1 : -1) * exitSpd;
+                        } else {
+                            t.px = targetX;
+                            t.x = 12;
+                            t.py -= exitSpd;
+
+                            if (t.py <= targetY) {
+                                t.py = targetY;
+                                t.y = 8;
+                                t.inJail = false;
+                                t.dx = (t.id % 2 === 0) ? 1 : -1;
+                                t.dy = 0;
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                if (t.y === 14) {
+                    if (t.px < -P_TILE / 2) {
+                        t.px = (P_COLS - 1) * P_TILE;
+                        t.x = P_COLS - 1;
+                    } else if (t.px > (P_COLS - 0.5) * P_TILE) {
+                        t.px = 0;
+                        t.x = 0;
+                    }
+                }
+
+                const curSpd = t.scared ? (t.spd * 0.6) : t.spd;
+                t.px += t.dx * curSpd;
+                t.py += t.dy * curSpd;
+
+                let reachedTile = false;
+                if (t.dx > 0 && t.px >= (t.x + 1) * P_TILE) {
+                    t.x += 1; t.px = t.x * P_TILE; reachedTile = true;
+                } else if (t.dx < 0 && t.px <= (t.x - 1) * P_TILE) {
+                    t.x -= 1; t.px = t.x * P_TILE; reachedTile = true;
+                } else if (t.dy > 0 && t.py >= (t.y + 1) * P_TILE) {
+                    t.y += 1; t.py = t.y * P_TILE; reachedTile = true;
+                } else if (t.dy < 0 && t.py <= (t.y - 1) * P_TILE) {
+                    t.y -= 1; t.py = t.y * P_TILE; reachedTile = true;
+                }
+
+                if (reachedTile || (t.dx === 0 && t.dy === 0)) {
+                    const dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}].filter(d => {
+                        if (d.x === -t.dx && d.y === -t.dy) return false;
+                        return pCanMove(t.x + d.x, t.y + d.y, true, false);
+                    });
+
+                    if (dirs.length > 0) {
+                        const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+                        t.dx = chosen.x;
+                        t.dy = chosen.y;
+                    } else if (pCanMove(t.x - t.dx, t.y - t.dy, true, false)) {
+                        t.dx = -t.dx;
+                        t.dy = -t.dy;
+                    } else {
+                        t.dx = 0;
+                        t.dy = 0;
+                    }
+                }
+
+                if (Math.hypot(pCar.px - t.px, pCar.py - t.py) < 14) {
+                    if (t.scared) {
+                        pScore += 200;
+                        document.getElementById('pScore').innerText = pScore;
+                        t.px = 12*P_TILE; t.py = 11*P_TILE; t.x = 12; t.y = 11;
+                        t.scared = false; t.inJail = true; t.exitDelay = 30;
+                    } else {
+                        pHandleCaught();
+                    }
+                }
+            });
+
+            pDraw();
+            if (pGameRunning) requestAnimationFrame(pUpdate);
+        }
+
+        function pHandleCaught() {
+            pGameRunning = false;
+            pLives--;
+            document.getElementById('pLives').innerText = pLives;
+
+            if (pLives <= 0) {
+                savePLeaderboard();
+                alert(`Geen patrouillewagens meer over! Eindscore: ${pScore}`);
+                pLives = 3; pScore = 0; pLevel = 1;
+                document.getElementById('pLives').innerText = pLives;
+                document.getElementById('pScore').innerText = pScore;
+                document.getElementById('pLevel').innerText = pLevel;
+                initPacmanGame();
+                return;
+            }
+            openPModal();
+        }
+
+        /* ================= KENNISVERIFICATIE (5 VRAGEN + 10 AFLEIDERS) ================= */
+        function openPModal() {
+            if (pTargetPool.length < 5) pTargetPool = [...PACMAN_VOCABULARY];
+            pTargetPool.sort(() => Math.random() - 0.5);
+            pCurrentTargets = pTargetPool.splice(0, 5);
+
+            const tSet = new Set(pCurrentTargets.map(t => t.word));
+            const distractors = PACMAN_VOCABULARY
+                .filter(v => !tSet.has(v.word))
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 10);
+
+            pCurrentChips = [...pCurrentTargets.map(t => t.word), ...distractors.map(d => d.word)]
+                .sort(() => Math.random() - 0.5);
+
+            pCompleted.clear();
+
+            const cWrap = document.getElementById('pChips');
+            cWrap.innerHTML = "";
+            pCurrentChips.forEach(w => {
+                const c = document.createElement('div');
+                c.className = "p-chip";
+                c.id = `pchip_${w.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                c.innerText = w;
+                cWrap.appendChild(c);
+            });
+
+            const qWrap = document.getElementById('pQuestions');
+            qWrap.innerHTML = "";
+            pCurrentTargets.forEach((q, idx) => {
+                const div = document.createElement('div');
+                div.className = "pacman-q-card";
+                div.id = `pqCard_${idx}`;
+                div.innerHTML = `
+                    <div style="font-size:0.85em; margin-bottom:4px; color:#cfd8dc;"><strong>${idx+1}.</strong> ${q.def}</div>
+                    <input type="text" class="pacman-input" id="pInput_${idx}" placeholder="Typ het woord zelf in..." autocomplete="off" onpaste="return false;">
+                `;
+                qWrap.appendChild(div);
+
+                const inp = div.querySelector('input');
+                inp.oninput = () => pCheckInput(idx, q.word);
+            });
+
+            pUpdateBtn();
+            document.getElementById('pModal').style.display = 'flex';
+            const firstInput = document.getElementById('pInput_0');
+            if (firstInput) firstInput.focus();
+        }
+
+        function norm(s) {
+            return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        }
+
+        function pCheckInput(idx, expected) {
+            const inp = document.getElementById(`pInput_${idx}`);
+            const val = inp.value.trim().toLowerCase();
+            const card = document.getElementById(`pqCard_${idx}`);
+
+            if (norm(val) === norm(expected) || val === expected.toLowerCase()) {
+                card.classList.add('correct');
+                inp.readOnly = true;
+                pCompleted.add(idx);
+
+                for(let i=0; i<5; i++){
+                    if(!pCompleted.has(i)){
+                        const f = document.getElementById(`pInput_${i}`);
+                        if(f) f.focus();
+                        break;
+                    }
+                }
+            } else {
+                card.classList.remove('correct');
+                pCompleted.delete(idx);
+            }
+
+            const typed = new Set();
+            pCompleted.forEach(i => typed.add(norm(pCurrentTargets[i].word)));
+            pCurrentChips.forEach(w => {
+                const chip = document.getElementById(`pchip_${w.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                if (chip) chip.classList.toggle('used', typed.has(norm(w)));
+            });
+
+            pUpdateBtn();
+        }
+
+        function pUpdateBtn() {
+            const btn = document.getElementById('pBtnStart');
+            btn.innerText = `Typ alle 5 woorden correct in (${pCompleted.size}/5)`;
+            btn.disabled = (pCompleted.size !== 5);
+            if(pCompleted.size === 5) btn.innerText = "Sirene Aan: Start Patrouille!";
+        }
+
+        function pFinishChallenge() {
+            document.getElementById('pModal').style.display = 'none';
+            pResetPositions();
+            pGameRunning = true;
+            requestAnimationFrame(pUpdate);
+        }
+
+        /* ================= LOKAAL LEADERBOARD ================= */
+        function savePLeaderboard() {
+            if (pScore <= 0) return;
+            const playerName = (document.getElementById('playerNameInput').value || "Agent").trim();
+            const key = "pacman_vocab_leaderboard";
+            const entries = JSON.parse(localStorage.getItem(key) || "[]");
+            entries.push({ name: playerName, score: pScore, level: pLevel });
+            entries.sort((a,b) => b.score - a.score);
+            localStorage.setItem(key, JSON.stringify(entries.slice(0, 10)));
+            updatePLeaderboard();
+        }
+
+        function updatePLeaderboard() {
+            const list = document.getElementById('pLeaderboard');
+            const entries = JSON.parse(localStorage.getItem("pacman_vocab_leaderboard") || "[]");
+
+            list.innerHTML = "";
+            if (entries.length === 0) {
+                list.innerHTML = "<li style='color:#78909c;'>Nog geen scores geregistreerd.</li>";
+                return;
+            }
+
+            entries.slice(0, 10).forEach((e, idx) => {
+                const li = document.createElement('li');
+                li.style.padding = "5px 0";
+                li.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
+                li.innerHTML = `<strong>#${idx+1} ${e.name}</strong> (Lvl ${e.level || 1}) - <span style="color:var(--gold); font-weight:bold;">${e.score} pt</span>`;
+                list.appendChild(li);
+            });
+        }
+
+        // Start direct bij het laden van de pagina
+        window.addEventListener('DOMContentLoaded', initPacmanGame);
+    </script>
+</body>
+</html>
